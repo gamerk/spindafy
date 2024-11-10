@@ -1,0 +1,9 @@
+test/*
+test2/*
+__pycache__/*
+badapple_frames/*
+badspinda/*
+badspinda-fast/*
+*.mp4
+*.webm
+*.out

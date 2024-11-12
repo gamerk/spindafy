@@ -168,13 +168,14 @@ class SpindaConfig:
         spot_arr = self.spot_masks_arr[index]
         sa_shape = (pos[0] + spot_arr.shape[0], pos[1] + spot_arr.shape[1])
 
+
         base[pos[0]:sa_shape[0], pos[1]:sa_shape[1]] = spot_arr & self.sprite_mask_arr[pos[0]:sa_shape[0], pos[1]:sa_shape[1]]
         
         base = base[15:48, 17:52]
-        base = np.repeat(base[..., None], 3, 2)
+        # base = np.repeat(base[15:48, 17:52, None], 3, 2)
 
 
-        diff = np.sum(np.abs(base - tarr))
+        diff = np.sum(np.abs(base - tarr[:, :, 0]))
         return diff
             
 

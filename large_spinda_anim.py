@@ -12,26 +12,13 @@ POPULATION = 100
 OUTPUT_DIR = "badspinda-fast"
 
 def spindafy_frame(n, filename, overwrite=False, dump_json=False, n_inputs=0):
-        
-    # if n < args.skip:
-    #     print(f"skipping first {args.skip} frames!")
-    #     return
-
-    # if n%2 == 0 and args.skip_even:
-    #     print(f"skipping even frames!")
-    #     return
-
-    # if n%2 != 0 and args.skip_odd:
-    #     print(f"skipping odd frames!")
-    #     return
 
     if not overwrite and len(glob(OUTPUT_DIR + f"/frame{n:0>4}*")) > 0:
-        # Image.open(filename)
         print("frame already found! skipping.")
-        return    
+        return
     
-    # print(f"Starting frame #{n}")
-
+    if n % 100 == 0:
+        print(f"Starting frame {n}")
 
     (img, pids) = to_spindas(filename, POPULATION, GENERATIONS, invert=True)
 
@@ -76,7 +63,7 @@ if __name__ == '__main__':
     start = time()
 
     with mp.Pool(cpu_count) as pool:
-        pool.starmap(spindafy_frame, input_params, chunksize=10)
+        pool.starmap(spindafy_frame, input_params, chunksize=1)
 
     print(time() - start)
         

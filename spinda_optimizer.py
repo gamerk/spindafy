@@ -1,15 +1,6 @@
 from PIL import Image
 from spindafy import SpindaConfig
-# from random import choice, random, randint
-# import multiprocessing, 
 import numpy as np
-# from itertools import repeat, starmap
-# from scipy import signal
-# from matplotlib import pyplot as plt
-
-# from itertools import permutations
-
-# import time
 
 PREDEFINED = {
     "ALL_BLACK": 1097720040,
@@ -24,30 +15,34 @@ NEUTRAL = 0
 XNEXT = 25
 YNEXT = 20
 
-SINGLE_COLOR_THRESH = 0
+SINGLE_COLOR_THRESH = 20
 
-sp_mask = np.array(SpindaConfig.sprite_mask)[:, :, 3]
-sp_base = np.asarray(SpindaConfig.sprite_base)[:, :, 3]
-# sp_mask[np.pad(sp_base, ((YNEXT, 0), (0, 0)))[:64, :64] + np.pad(sp_base, ((0, 0), (XNEXT, 0)))[:64, :64] > 0] = 0
+sp_mask = np.array(SpindaConfig.sprite_mask)[15:-16, 17:-12, 3] == 0
+sp_mask_nonzero = np.count_nonzero(sp_mask)
+# sp_base = np.asarray(SpindaConfig.sprite_base)[:, :, 3]
 spots: list[np.ndarray] = [None] * 4
 for i in range(4):
     spots[i] = np.asarray(SpindaConfig.spot_masks[i])[:, :, 3]
     spots[i] = -np.where(spots[i], WHITE, BLACK)
+
+white = SpindaConfig.from_personality(PREDEFINED["ALL_WHITE"])
+black = SpindaConfig.from_personality(PREDEFINED["ALL_BLACK"])
 
 def fast_evo(si: np.ndarray):
     
     # Sprite mask crop: image.crop((17, 15, 52, 48))
     # Subimg size: width 35, height 33
 
-    threshed = np.average(si, 2) > (int(np.min(si)) + int(np.max(si))) / 2
-
     # Check if all white or all black is best for this subimage
-    white = SpindaConfig.from_personality(PREDEFINED["ALL_WHITE"])
-    black = SpindaConfig.from_personality(PREDEFINED["ALL_BLACK"])
+
+    count = np.count_nonzero(si[sp_mask])
+    # count2 = np.count_nonzero(~si[sp_mask])
+    # print(count, count2, count + count2, si.size, si.shape, sp_mask.shape)
+    # raise Exception()
     
-    if np.count_nonzero(threshed[sp_mask[15:-16, 17:-12] == 0]) <= SINGLE_COLOR_THRESH:
+    if count <= SINGLE_COLOR_THRESH:
         return white
-    elif np.count_nonzero(~threshed[sp_mask[15:-16, 17:-12] == 0]) <= SINGLE_COLOR_THRESH:
+    elif 1848 - count <= SINGLE_COLOR_THRESH:
         return black
     
     spinda = SpindaConfig()
@@ -62,19 +57,6 @@ def fast_evo(si: np.ndarray):
                 if sim < best_sim:
                     best_sim = sim
                     best_pos = (i, j)
-        
-        # radius = 1
-        # width = best_pos[0] - radius, best_pos[0] + radius + 1
-        # height = best_pos[1] - radius, best_pos[1] + radius + 1
-        # for i in range(*width):
-        #     for j in range(*height):
-        #         if i == j == 0:
-        #             continue
-        #         spinda.spots[spot_index] = (i, j)
-        #         sim = spinda.get_difference_single(si, spot_index)
-        #         if sim < best_sim:
-        #             best_sim = sim
-        #             best_pos = (i, j)
                 
         spinda.spots[spot_index] = best_pos
 

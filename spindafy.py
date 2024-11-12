@@ -89,8 +89,7 @@ class SpindaConfig:
 
         return img
     
-    def render_pattern(self):
-
+    def render_pattern_arr(self):
         base = np.array(self.sprite_base)
 
         for index in range(4):
@@ -100,14 +99,19 @@ class SpindaConfig:
             spot_arr = self.spot_masks_arr[index]
             sa_shape = (pos[0] + spot_arr.shape[0], pos[1] + spot_arr.shape[1])
 
-            subbase = base[pos[0]:sa_shape[0], pos[1]:sa_shape[1]]
-
             full_mask = np.logical_and(spot_arr, self.sprite_mask_color_arr[pos[0]:sa_shape[0], pos[1]:sa_shape[1], 3])
-            full_mask = np.repeat(full_mask[..., None], 4, axis=2)
 
-            base[pos[0]:sa_shape[0], pos[1]:sa_shape[1]] = np.where(full_mask, self.sprite_mask_color_arr[pos[0]:sa_shape[0], pos[1]:sa_shape[1]], subbase)
+            base[pos[0]:sa_shape[0], pos[1]:sa_shape[1]][full_mask] = self.sprite_mask_color_arr[pos[0]:sa_shape[0], pos[1]:sa_shape[1]][full_mask]
+
+            # subbase = base[pos[0]:sa_shape[0], pos[1]:sa_shape[1]]
+            # full_mask = np.repeat(full_mask[...,None], 4, 2)
+            # base[pos[0]:sa_shape[0], pos[1]:sa_shape[1]] = np.where(full_mask, self.sprite_mask_color_arr[pos[0]:sa_shape[0], pos[1]:sa_shape[1]], subbase)
         
-        result = Image.fromarray(base)
+        return base
+
+    def render_pattern(self):
+        
+        result = Image.fromarray(self.render_pattern_arr())
     
         return result
         

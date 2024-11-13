@@ -9,12 +9,12 @@ from time import time
 GENERATIONS = 10
 POPULATION = 100
 
-OUTPUT_DIR = "badspinda-fast"
+# OUTPUT_DIR = "badspinda-fast"
 
-def spindafy_frame(n, filename, overwrite=False, dump_json=False, n_inputs=0):
+def spindafy_frame(n, filename, overwrite=False, dump_json=False, n_inputs=0, output_dir="badspinda-fast"):
 
-    if not overwrite and len(glob(OUTPUT_DIR + f"/frame{n:0>4}*")) > 0:
-        print("frame already found! skipping.")
+    if not overwrite and len(glob(output_dir + f"/frame{n:0>4}*")) > 0:
+        # print("frame already found! skipping.")
         return
     
     if n % 100 == 0:
@@ -22,17 +22,18 @@ def spindafy_frame(n, filename, overwrite=False, dump_json=False, n_inputs=0):
 
     (img, pids) = to_spindas(filename, POPULATION, GENERATIONS, invert=True)
 
-    output_filename = OUTPUT_DIR + f"/frame{n:0>4}.png"
+    output_filename = output_dir + f"/frame{n:0>4}.png"
     img.save(output_filename)
 
     # write PIDs to JSON files:
     if dump_json:
-        with open(OUTPUT_DIR + f"/pids/frame{n:0>4}.json", "w") as f:
+        with open(output_dir + f"/pids/frame{n:0>4}.json", "w") as f:
             json.dump(pids, f)
 
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("input_directory")
+    parser.add_argument("output_directory")
     # parser.add_argument("output_directory")
     # parser.add_argument("skip", type=int, default=0, nargs="?")
     # parser.add_argument("--skip-even", action="store_true")
@@ -46,12 +47,12 @@ if __name__ == '__main__':
     inputs = [str(i) for i in glob(args.input_directory + "/*")]
         
     # create output directories if they don't exist
-    Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+    Path(args.output_directory).mkdir(parents=True, exist_ok=True)
 
     if args.dump_json:
-        Path(OUTPUT_DIR + "/pids").mkdir(parents=True, exist_ok=True)
+        Path(args.output_directory + "/pids").mkdir(parents=True, exist_ok=True)
     
-    input_params = [(ind, f, args.overwrite, args.dump_json, len(inputs))
+    input_params = [(ind, f, args.overwrite, args.dump_json, len(inputs), args.output_directory)
                     for ind, f in enumerate(inputs)]
     
     cpu_count = -1

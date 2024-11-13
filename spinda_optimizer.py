@@ -35,14 +35,17 @@ def fast_evo(si: np.ndarray):
 
     # Check if all white or all black is best for this subimage
 
-    count = np.count_nonzero(si[sp_mask])
+    counter = si[sp_mask]
+
+    count = np.count_nonzero(counter)
+    count2 = counter.size - count
     # count2 = np.count_nonzero(~si[sp_mask])
-    # print(count, count2, count + count2, si.size, si.shape, sp_mask.shape)
+    # print(count, count2, count + count2, si.size, sp_mask.size, si[sp_mask].size)
     # raise Exception()
     
     if count <= SINGLE_COLOR_THRESH:
         return white
-    elif 1848 - count <= SINGLE_COLOR_THRESH:
+    elif count2 <= SINGLE_COLOR_THRESH:
         return black
     
     spinda = SpindaConfig()

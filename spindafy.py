@@ -160,23 +160,15 @@ class SpindaConfig:
     
     def get_difference_single(self, tarr: np.ndarray, index: int):
 
-        base = np.zeros((64, 64), dtype=tarr.dtype)
-
         pos = (self.spot_offsets[index][1] + self.spots[index][1], 
                 self.spot_offsets[index][0] + self.spots[index][0])
         
-        # spot_arr = self.spot_masks_arr[index]
         sa_shape = (pos[0] + self.spot_masks_arr[index].shape[0], pos[1] + self.spot_masks_arr[index].shape[1])
 
-
+        base = np.zeros((64, 64), dtype=tarr.dtype)
         base[pos[0]:sa_shape[0], pos[1]:sa_shape[1]] = self.spot_masks_arr[index] & self.sprite_mask_arr[pos[0]:sa_shape[0], pos[1]:sa_shape[1]]
-        
-        # base = base[15:48, 17:52]
-        # base = np.repeat(base[15:48, 17:52, None], 3, 2)
 
-
-        diff = np.sum(base[15:48, 17:52] - tarr[:, :, 0])
-        return diff
+        return np.sum(base[15:48, 17:52] ^ tarr)
             
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ from timeit import timeit
 def to_spindas(filename, pop, n_generations, invert = False, use_np=False):
     with Image.open(filename) as target:
         target = target.convert("1")
-        target = target.resize((target.size[0] // 4, target.size[1] // 4), resample=Image.Resampling.NEAREST)
+        target = target.resize((target.size[0] // 2, target.size[1] // 2), resample=Image.Resampling.NEAREST)
         if invert: target = PIL.ImageOps.invert(target)
 
         tarr = np.array(target)
@@ -50,7 +50,7 @@ def to_spindas(filename, pop, n_generations, invert = False, use_np=False):
     
 if __name__ == "__main__":
     from time import time
-    (img, pids) = to_spindas("adef_video/frame0000001.png", 100, 10, use_np=True)
+    (img, pids) = to_spindas("test/test_large.png", 100, 10, use_np=True)
     print(timeit("""to_spindas("test/test_large.png", 100, 10, use_np=True)""", globals=vars(), number=10) / 10)
     print(timeit("""to_spindas("test/test_large.png", 100, 10, use_np=False)""", globals=vars(), number=10) / 10)
     img.resize((img.size[0]*10, img.size[1]*10), Image.Resampling.NEAREST)#.show()

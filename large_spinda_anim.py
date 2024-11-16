@@ -13,8 +13,10 @@ POPULATION = 100
 
 def spindafy_frame(n, filename, overwrite=False, dump_json=False, n_inputs=0, output_dir="badspinda-fast"):
 
-    if not overwrite and len(glob(output_dir + f"/frame{n:0>4}*")) > 0:
+    if not overwrite and len(glob(output_dir + f"/frame{n:0>7}*")) > 0:
         # print("frame already found! skipping.")
+        if n % 100 == 0:
+            print(f"Skipping frame {n}")
         return
     
     if n % 100 == 0:
@@ -22,20 +24,20 @@ def spindafy_frame(n, filename, overwrite=False, dump_json=False, n_inputs=0, ou
 
     (img, pids) = to_spindas(filename, POPULATION, GENERATIONS, invert=True)
 
-    output_filename = output_dir + f"/frame{n:0>4}.png"
+    output_filename = output_dir + f"/frame{n:0>7}.png"
     img.save(output_filename)
 
     # write PIDs to JSON files:
     if dump_json:
-        with open(output_dir + f"/pids/frame{n:0>4}.json", "w") as f:
+        with open(output_dir + f"/pids/frame{n:0>7}.json", "w") as f:
             json.dump(pids, f)
 
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("input_directory")
     parser.add_argument("output_directory")
-    # parser.add_argument("output_directory")
-    # parser.add_argument("skip", type=int, default=0, nargs="?")
+    parser.add_argument("--start", type=int, default=0, nargs="?")
+    parser.add_argument("--end", type=int, default=-1, nargs="?")
     # parser.add_argument("--skip-even", action="store_true")
     # parser.add_argument("--skip-odd", action="store_true")
     parser.add_argument('--overwrite', action="store_true")
@@ -53,7 +55,7 @@ if __name__ == '__main__':
         Path(args.output_directory + "/pids").mkdir(parents=True, exist_ok=True)
     
     input_params = [(ind, f, args.overwrite, args.dump_json, len(inputs), args.output_directory)
-                    for ind, f in enumerate(inputs)]
+                    for ind, f in enumerate(inputs)][args.start:args.end]
     
     cpu_count = -1
     try:

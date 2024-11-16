@@ -28,6 +28,12 @@ for i in range(4):
 white = SpindaConfig.from_personality(PREDEFINED["ALL_WHITE"])
 black = SpindaConfig.from_personality(PREDEFINED["ALL_BLACK"])
 
+test1_points = [(0, 0), (0, 15), (15, 0), (15, 15)]
+test2_points = {p: [(x, y) for x in (p[0] - 7, p[0] + 7)
+                           for y in (p[1] - 7, p[1] + 7)
+                           if 0 <= x <= 15 and 0 <= y <= 15] 
+                    for p in test1_points}
+
 def fast_evo(si: np.ndarray):
     
     # Sprite mask crop: image.crop((17, 15, 52, 48))
@@ -53,13 +59,19 @@ def fast_evo(si: np.ndarray):
 
         best_pos = (0, 0)
         best_sim = 1e10
-        for i in range(0, 16, 5):
-            for j in range(0, 16, 5):
-                spinda.spots[spot_index] = (i, j)
-                sim = spinda.get_difference_single(si, spot_index)
-                if sim < best_sim:
-                    best_sim = sim
-                    best_pos = (i, j)
+        for i, j in test1_points:
+            spinda.spots[spot_index] = (i, j)
+            sim = spinda.get_difference_single(si, spot_index)
+            if sim < best_sim:
+                best_sim = sim
+                best_pos = (i, j)
+        
+        for i, j in test2_points[best_pos]:
+            spinda.spots[spot_index] = (i, j)
+            sim = spinda.get_difference_single(si, spot_index)
+            if sim < best_sim:
+                best_sim = sim
+                best_pos = (i, j)
                 
         spinda.spots[spot_index] = best_pos
 

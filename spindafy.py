@@ -21,8 +21,8 @@ class SpindaConfig:
 
     sprite_mask_color_arr = np.array(sprite_mask)
 
-    sprite_mask_arr = np.array(sprite_mask)[:, :, 3]
-    spot_masks_arr = [np.array(i)[:, :, 3] for i in spot_masks]
+    sprite_mask_arr = np.array(sprite_mask)[:, :, 3] > 0
+    spot_masks_arr = [np.array(i)[:, :, 3] > 0 for i in spot_masks]
 
     def __init__(self):
         self.spots = [
@@ -96,16 +96,12 @@ class SpindaConfig:
             pos = (self.spot_offsets[index][1] + self.spots[index][1], 
                    self.spot_offsets[index][0] + self.spots[index][0])
             
-            spot_arr = self.spot_masks_arr[index]
-            sa_shape = (pos[0] + spot_arr.shape[0], pos[1] + spot_arr.shape[1])
+            # spot_arr = self.spot_masks_arr[index]
+            sa_shape = (pos[0] + self.spot_masks_arr[index].shape[0], pos[1] + self.spot_masks_arr[index].shape[1])
 
-            full_mask = np.logical_and(spot_arr, self.sprite_mask_color_arr[pos[0]:sa_shape[0], pos[1]:sa_shape[1], 3])
+            full_mask = self.spot_masks_arr[index] & self.sprite_mask_arr[pos[0]:sa_shape[0], pos[1]:sa_shape[1]]
 
             base[pos[0]:sa_shape[0], pos[1]:sa_shape[1]][full_mask] = self.sprite_mask_color_arr[pos[0]:sa_shape[0], pos[1]:sa_shape[1]][full_mask]
-
-            # subbase = base[pos[0]:sa_shape[0], pos[1]:sa_shape[1]]
-            # full_mask = np.repeat(full_mask[...,None], 4, 2)
-            # base[pos[0]:sa_shape[0], pos[1]:sa_shape[1]] = np.where(full_mask, self.sprite_mask_color_arr[pos[0]:sa_shape[0], pos[1]:sa_shape[1]], subbase)
         
         return base
 
@@ -123,7 +119,7 @@ class SpindaConfig:
         if target.mode != "RGB":
             target = target.convert("RGB")
         # Compare the resulting images by the total average pixel difference
-        result = self.render_pattern(only_pattern=True, crop=True).convert("RGB")
+        result = self.render_pattern_2(only_pattern=True, crop=True).convert("RGB")
         diff = ImageChops.difference(target, result)
         total_diff = 0
         for n, (r, g, b) in diff.getcolors():  # gives a list of counter and RGB values in the image
@@ -133,8 +129,8 @@ class SpindaConfig:
     def get_difference(self, target: Image.Image | np.ndarray):
 
         if type(target) == Image.Image:
-            if target.mode != "RGB":
-                target = target.convert("RGB")
+            if target.mode != "1":
+                target = target.convert("1")
             
             tarr = np.array(target)
         else:
@@ -149,14 +145,11 @@ class SpindaConfig:
             spot_arr = self.spot_masks_arr[index]
             sa_shape = (pos[0] + spot_arr.shape[0], pos[1] + spot_arr.shape[1])
 
-            base[pos[0]:sa_shape[0], pos[1]:sa_shape[1]] = spot_arr & self.sprite_mask_arr[pos[0]:sa_shape[0], pos[1]:sa_shape[1]]
+            base[pos[0]:sa_shape[0], pos[1]:sa_shape[1]][spot_arr] = self.sprite_mask_arr[pos[0]:sa_shape[0], pos[1]:sa_shape[1]][spot_arr]
         
         base = base[15:48, 17:52]
-        base = np.repeat(base[..., None], 3, 2)
 
-
-        diff = np.sum(np.abs(base - tarr))
-        return diff
+        return np.count_nonzero(base ^ tarr)
     
     def get_difference_single(self, tarr: np.ndarray, index: int):
 
@@ -165,14 +158,16 @@ class SpindaConfig:
         
         sa_shape = (pos[0] + self.spot_masks_arr[index].shape[0], pos[1] + self.spot_masks_arr[index].shape[1])
 
-        base = np.zeros((64, 64), dtype=tarr.dtype)
-        base[pos[0]:sa_shape[0], pos[1]:sa_shape[1]] = self.spot_masks_arr[index] & self.sprite_mask_arr[pos[0]:sa_shape[0], pos[1]:sa_shape[1]]
+        base = np.zeros((64, 64), dtype=np.bool)
+        base[15:48, 17:52] = tarr
+        base[pos[0]:sa_shape[0], pos[1]:sa_shape[1]] ^= self.spot_masks_arr[index] & self.sprite_mask_arr[pos[0]:sa_shape[0], pos[1]:sa_shape[1]]
 
-        return np.sum(base[15:48, 17:52] ^ tarr)
+        return np.count_nonzero(base)
             
 
 if __name__ == "__main__":
-    spin = SpindaConfig.from_personality(0x7a397866)
+    spin = SpindaConfig.from_personality(8384767)
+    spin.render_pattern().show()
     print(timeit("""spin.render_pattern()""", globals=vars(), number=1000))
     print(timeit("""spin.render_pattern_2()""", globals=vars(), number=1000))
     print(timeit("""spin.get_difference_2(Image.new("RGB", (35, 33)))""", globals=vars(), number=1000))

@@ -7,6 +7,8 @@ PREDEFINED = {
     "ALL_WHITE": 0xff200000
 }
 
+cached = [8384767]
+
 
 BLACK = 1
 WHITE = -1
@@ -15,7 +17,7 @@ NEUTRAL = 0
 XNEXT = 25
 YNEXT = 20
 
-SINGLE_COLOR_THRESH = 20
+SINGLE_COLOR_THRESH = 0
 
 sp_mask = np.array(SpindaConfig.sprite_mask)[15:-16, 17:-12, 3] == 0
 sp_mask_nonzero = np.count_nonzero(sp_mask)
@@ -28,12 +30,6 @@ for i in range(4):
 white = SpindaConfig.from_personality(PREDEFINED["ALL_WHITE"])
 black = SpindaConfig.from_personality(PREDEFINED["ALL_BLACK"])
 
-test1_points = [(0, 0), (0, 15), (15, 0), (15, 15)]
-test2_points = {p: [(x, y) for x in (p[0] - 7, p[0] + 7)
-                           for y in (p[1] - 7, p[1] + 7)
-                           if 0 <= x <= 15 and 0 <= y <= 15] 
-                    for p in test1_points}
-
 def fast_evo(si: np.ndarray):
     
     # Sprite mask crop: image.crop((17, 15, 52, 48))
@@ -45,36 +41,42 @@ def fast_evo(si: np.ndarray):
 
     count = np.count_nonzero(counter)
     count2 = counter.size - count
-    # count2 = np.count_nonzero(~si[sp_mask])
-    # print(count, count2, count + count2, si.size, sp_mask.size, si[sp_mask].size)
-    # raise Exception()
     
     if count <= SINGLE_COLOR_THRESH:
         return white
     elif count2 <= SINGLE_COLOR_THRESH:
         return black
-    
+
+    tests = 0
+
     spinda = SpindaConfig()
+
     for spot_index in range(4):
 
         best_pos = (0, 0)
         best_sim = 1e10
-        for i, j in test1_points:
-            spinda.spots[spot_index] = (i, j)
-            sim = spinda.get_difference_single(si, spot_index)
-            if sim < best_sim:
-                best_sim = sim
-                best_pos = (i, j)
+
+        radius = 15
+        num_steps = 1
         
-        for i, j in test2_points[best_pos]:
-            spinda.spots[spot_index] = (i, j)
-            sim = spinda.get_difference_single(si, spot_index)
-            if sim < best_sim:
-                best_sim = sim
-                best_pos = (i, j)
+        for iter in range(2):
+            low = max(best_pos[0] - radius, 0), max(best_pos[1] - radius, 0)
+            high = min(best_pos[0] + radius, 15), min(best_pos[1] + radius, 15)
+            for i in range(low[0], high[0] + 1, (high[0] - low[0]) // num_steps):
+                for j in range(low[1], high[1] + 1, (high[1] - low[1]) // num_steps):
+                    if (i, j) == best_pos and iter > 0:
+                        continue
+                    spinda.spots[spot_index] = (i, j)
+                    sim = spinda.get_difference_single(si, spot_index)
+                    tests += 1
+                    if sim < best_sim:
+                        best_sim = sim
+                        best_pos = spinda.spots[spot_index]
+            radius //= 2
+        tests = 0
                 
         spinda.spots[spot_index] = best_pos
-
+    
     return spinda
 
 

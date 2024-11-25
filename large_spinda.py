@@ -1,6 +1,6 @@
-from PIL import Image
+from PIL import Image, ImageOps
 from spinda_optimizer import evolve, fast_evo, PREDEFINED
-import json, PIL.ImageOps
+import json
 import numpy as np
 from timeit import timeit
 from spindafy import SpindaConfig
@@ -12,20 +12,28 @@ to_prerender = [*PREDEFINED.values(), 8384767, 1044735]
 prerendered = {pid: SpindaConfig.from_personality(pid).render_pattern() for pid in to_prerender}
 
 # this is definitely not the best way of doing this!
-def to_spindas(filename, pop, n_generations, invert = False):
+def to_spindas(filename, pop, n_generations, invert = False, edges=False, scale=1):
     with Image.open(filename) as target:
         target = target.convert("L")
-        target = target.resize((target.size[0] // 2, target.size[1] // 2), resample=Image.Resampling.NEAREST)
-        if invert: target = PIL.ImageOps.invert(target)
+        if scale != 1:
+            target = target.resize((int(target.size[0] * scale), int(target.size[1] * scale)), resample=Image.Resampling.NEAREST)
+        if invert:
+            target = ImageOps.invert(target)
+
+        np_target = np.array(target)
+        
 
         num_x = int((target.size[0]+10)/25)
         num_y = int((target.size[1]+13)/20)
 
-        canny = cv2.Canny(np.array(target), 50, 150)
-        canny = cv2.dilate(canny, np.full((10, 10), 1))
+        if edges:
+            np_target = cv2.dilate(cv2.Canny(np_target, 50, 150), np.full((10, 10), 1))
+        else:
+            np_target = np_target > 127
+
 
         tarr = np.zeros((num_y*20+33, num_x*25+35), dtype=np.bool)
-        tarr[:target.size[1], :target.size[0]] = canny
+        tarr[:target.size[1], :target.size[0]] = np_target
 
         img = Image.new("RGBA", (39 + num_x * 25, 44 + num_y * 20))
         pids = []

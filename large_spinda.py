@@ -8,11 +8,12 @@ import cv2
 from time import sleep
 
 
-to_prerender = [*PREDEFINED.values(), 8384767, 1044735]
+to_prerender = [*PREDEFINED.values(), 8384767, 1044735, 4278190080, 251693056, 4278190199, 4278190192, 251692800, 4160684032]
 prerendered = {pid: SpindaConfig.from_personality(pid).render_pattern() for pid in to_prerender}
 
 # this is definitely not the best way of doing this!
 def to_spindas(filename, pop, n_generations, invert = False, edges=False, scale=1):
+    cache_miss = 0
     with Image.open(filename) as target:
         target = target.convert("L")
         if scale != 1:
@@ -35,7 +36,7 @@ def to_spindas(filename, pop, n_generations, invert = False, edges=False, scale=
         tarr = np.zeros((num_y*20+33, num_x*25+35), dtype=np.bool)
         tarr[:target.size[1], :target.size[0]] = np_target
 
-        img = Image.new("RGBA", (39 + num_x * 25, 44 + num_y * 20))
+        img = Image.new("RGB", (39 + num_x * 25, 44 + num_y * 20))
         pids = []
 
         for y in range(num_y):
@@ -51,6 +52,7 @@ def to_spindas(filename, pop, n_generations, invert = False, edges=False, scale=
                     # print(best_spinda.get_personality(), best_spinda.get_difference(sub_target))
                 else:
                     spinmage = best_spinda.render_pattern()
+                    cache_miss += 1
                     prerendered[best_spinda.get_personality()] = spinmage
                 
                 img.paste(
@@ -60,7 +62,6 @@ def to_spindas(filename, pop, n_generations, invert = False, edges=False, scale=
                 )
                 
                 pids[y].append(best_spinda.get_personality())
-
         return (img, pids)
 
 if __name__ == "__main__":

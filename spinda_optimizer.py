@@ -17,7 +17,8 @@ NEUTRAL = 0
 XNEXT = 25
 YNEXT = 20
 
-SINGLE_COLOR_THRESH = 0
+SINGLE_COLOR_THRESH = 10
+NUM_STEPS = 1
 
 sp_mask = np.array(SpindaConfig.sprite_mask)[15:-16, 17:-12, 3] == 0
 sp_mask_nonzero = np.count_nonzero(sp_mask)
@@ -47,8 +48,6 @@ def fast_evo(si: np.ndarray):
     elif count2 <= SINGLE_COLOR_THRESH:
         return black
 
-    tests = 0
-
     spinda = SpindaConfig()
 
     for spot_index in range(4):
@@ -57,23 +56,20 @@ def fast_evo(si: np.ndarray):
         best_sim = 1e10
 
         radius = 15
-        num_steps = 1
         
         for iter in range(2):
             low = max(best_pos[0] - radius, 0), max(best_pos[1] - radius, 0)
             high = min(best_pos[0] + radius, 15), min(best_pos[1] + radius, 15)
-            for i in range(low[0], high[0] + 1, (high[0] - low[0]) // num_steps):
-                for j in range(low[1], high[1] + 1, (high[1] - low[1]) // num_steps):
+            for i in range(low[0], high[0] + 1, (high[0] - low[0]) // NUM_STEPS):
+                for j in range(low[1], high[1] + 1, (high[1] - low[1]) // NUM_STEPS):
                     if (i, j) == best_pos and iter > 0:
                         continue
                     spinda.spots[spot_index] = (i, j)
                     sim = spinda.get_difference_single(si, spot_index)
-                    tests += 1
                     if sim < best_sim:
                         best_sim = sim
                         best_pos = spinda.spots[spot_index]
             radius //= 2
-        tests = 0
                 
         spinda.spots[spot_index] = best_pos
     
@@ -82,8 +78,8 @@ def fast_evo(si: np.ndarray):
 
 def evolve(target_img: Image.Image | np.ndarray, pop_size: int, n_gens: int, include: list | None = None) -> tuple[float, SpindaConfig]:
     if type(target_img) == Image.Image:
-        target_img = target_img.convert('1')
-        target_img = np.array(target_img)
+        target_img = target_img.convert('L')
+        target_img = np.array(target_img) > 127
     s = fast_evo(target_img)
     return (0, s)
 

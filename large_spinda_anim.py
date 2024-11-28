@@ -13,7 +13,7 @@ POPULATION = 100
 
 # OUTPUT_DIR = "badspinda-fast"
 
-def spindafy_frame(n, filename, overwrite=False, dump_json=False, n_inputs=0, output_dir="badspinda-fast", scale=1, edges=False):
+def spindafy_frame(n, filename, overwrite, dump_json, n_inputs, output_dir, scale, edges):
 
     if not overwrite and len(glob(output_dir + f"/frame{n:0>7}*")) > 0:
         # print("frame already found! skipping.")
@@ -22,7 +22,7 @@ def spindafy_frame(n, filename, overwrite=False, dump_json=False, n_inputs=0, ou
         return
     
     if n % 100 == 0:
-        print(f"Starting frame {n}")
+        print(f"Starting frame {n}/{n_inputs}")
 
     (img, pids) = to_spindas(filename, POPULATION, GENERATIONS, invert=True, scale=scale, edges=edges)
 
@@ -33,6 +33,7 @@ def spindafy_frame(n, filename, overwrite=False, dump_json=False, n_inputs=0, ou
     if dump_json:
         with open(output_dir + f"/pids/frame{n:0>7}.json", "w") as f:
             json.dump(pids, f)
+    
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -85,16 +86,16 @@ if __name__ == '__main__':
         
 
     # find all input images
-    inputs = [str(i) for i in glob(args.input + "/*")]
+    inputs = [str(i) for i in glob(args.input + "/*")][args.start:args.end]
         
     # create output directories if they don't exist
     Path(args.output).mkdir(parents=True, exist_ok=True)
 
     if args.dump_json:
         Path(args.output + "/pids").mkdir(parents=True, exist_ok=True)
-    
+
     input_params = [(ind, f, args.overwrite, args.dump_json, len(inputs), args.output, args.scale, args.edges)
-                    for ind, f in enumerate(inputs)][args.start:args.end]
+                    for ind, f in enumerate(inputs)]
     
     cpu_count = args.ncores
     if cpu_count == -1:
@@ -106,7 +107,15 @@ if __name__ == '__main__':
     start = time()
 
     with mp.Pool(cpu_count) as pool:
-        pool.starmap(spindafy_frame, input_params, chunksize=1)
+        frames = pool.starmap(spindafy_frame, input_params, chunksize=1)
+    
+    # fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    # writer = cv2.VideoWriter("out.mp4", fourcc, 30, frames[0].shape[:2][::-1], True)
+
+    # for frame in frames:
+    #     writer.write(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+    
+    # writer.release()
 
     run_time = time() - start
     if run_time > 60:

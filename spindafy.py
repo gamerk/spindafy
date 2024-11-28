@@ -3,6 +3,8 @@ from random import randint
 import numpy as np
 from timeit import timeit
 
+mask_cache = {}
+
 class SpindaConfig:
     sprite_base = Image.open("res/spinda_base.png")
     sprite_mask = Image.open("res/spinda_mask.png")
@@ -99,21 +101,19 @@ class SpindaConfig:
             # spot_arr = self.spot_masks_arr[index]
             sa_shape = (pos[0] + self.spot_masks_arr[index].shape[0], pos[1] + self.spot_masks_arr[index].shape[1])
 
-            full_mask = self.spot_masks_arr[index] & self.sprite_mask_arr[pos[0]:sa_shape[0], pos[1]:sa_shape[1]]
+            if (index, pos) in mask_cache:
+                full_mask = mask_cache[(index, pos)]
+            else:
+                full_mask = self.spot_masks_arr[index] & self.sprite_mask_arr[pos[0]:sa_shape[0], pos[1]:sa_shape[1]]
+                mask_cache[(index, pos)] = full_mask
 
             base[pos[0]:sa_shape[0], pos[1]:sa_shape[1]][full_mask] = self.sprite_mask_color_arr[pos[0]:sa_shape[0], pos[1]:sa_shape[1]][full_mask]
         
         return base
 
     def render_pattern(self):
+        return Image.fromarray(self.render_pattern_arr())
         
-        result = Image.fromarray(self.render_pattern_arr())
-    
-        return result
-        
-
-
-
     def get_difference_2(self, target):
         # Validate the mode will match the type used in the next step
         if target.mode != "RGB":
@@ -158,9 +158,13 @@ class SpindaConfig:
         
         sa_shape = (pos[0] + self.spot_masks_arr[index].shape[0], pos[1] + self.spot_masks_arr[index].shape[1])
 
-        base = np.zeros((64, 64), dtype=np.bool)
+        base = np.zeros((49, 60), dtype=np.bool)
         base[15:48, 17:52] = tarr
-        base[pos[0]:sa_shape[0], pos[1]:sa_shape[1]] ^= self.spot_masks_arr[index] & self.sprite_mask_arr[pos[0]:sa_shape[0], pos[1]:sa_shape[1]]
+        if (index, pos) not in mask_cache:
+            mask_cache[(index, pos)] = self.spot_masks_arr[index] & self.sprite_mask_arr[pos[0]:sa_shape[0], pos[1]:sa_shape[1]]
+        
+        base[pos[0]:sa_shape[0], pos[1]:sa_shape[1]] ^= mask_cache[(index, pos)]
+            
 
         return np.count_nonzero(base)
             
